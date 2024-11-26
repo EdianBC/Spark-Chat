@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+    container_name: server
+    networks:
+      - messaging
+    ports:
+      - "5000:5000"
+    command: python server.py
+    working_dir: /app
+
+  client1:
+    build:
+      context: .
+    container_name: client1
+    networks:
+      - messaging
+    command: python client.py
+    working_dir: /app
+
+  client2:
+    build:
+      context: .
+    container_name: client2
+    networks:
+      - messaging
+    command: python client.py
+    working_dir: /app
+
+networks:
+  messaging:
+    driver: bridge
