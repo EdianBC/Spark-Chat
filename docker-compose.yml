@@ -2,34 +2,29 @@ version: '3.8'
 
 services:
   server:
-    build:
-      context: .
-    container_name: server
+    build: .
+    container_name: spark-chat-server
     networks:
-      - messaging
+      spark-net:
+        ipv4_address: 192.168.1.100
     ports:
-      - "5000:5000"
-    command: python server.py
-    working_dir: /app
-
-  client1:
-    build:
-      context: .
-    container_name: client1
+      - "12345:12345"
+    
+  client:
+    build: .
+    container_name: spark-chat-client
+    stdin_open: true
+    tty: true
     networks:
-      - messaging
-    command: python client.py
-    working_dir: /app
-
-  client2:
-    build:
-      context: .
-    container_name: client2
-    networks:
-      - messaging
-    command: python client.py
-    working_dir: /app
+      spark-net:
+        ipv4_address: 192.168.1.101
+    entrypoint: ["python", "client/client.py", "192.168.1.100"]
+    depends_on:
+      - server
 
 networks:
-  messaging:
+  spark-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24

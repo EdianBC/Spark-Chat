@@ -2,7 +2,8 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY ./src/server/server.py ./server.py
-COPY ./src/client/client.py ./client.py
+# Copiar todo el contenido de la carpeta 'src' dentro de la imagen
+COPY src/ /app/
 
-CMD ["python", "server.py"]
+# CMD para ejecutar el servidor por defecto
+CMD ["python", "server/server.py"]

@@ -1,33 +1,61 @@
 import socket
 import threading
+import sys
 
-HOST = '0.0.0.0'  # Escucha en todas las interfaces
-PORT = 5000
-clients = []
+class ChatServer:
+    def __init__(self, server_name):
+        self.server_name = server_name
+        self.users = {}  # Diccionario para almacenar usuarios: {username: (ip, port)}
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server_address = ("", 12345)
 
-def handle_client(conn, addr):
-    print(f"Conexión desde {addr}")
-    while True:
-        try:
-            msg = conn.recv(1024).decode('utf-8')
-            if not msg:
-                break
-            print(f"{addr}: {msg}")
-            # Reenvía el mensaje a todos los demás clientes
-            for client in clients:
-                if client != conn:
-                    client.send(f"{addr}: {msg}".encode('utf-8'))
-        except:
-            break
-    conn.close()
-    clients.remove(conn)
+    def start(self):
+        self.server_socket.bind(self.server_address)
+        print(f"Servidor '{self.server_name}' iniciado en {self.get_ip()}:12345")
+        self.listen_for_messages()
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((HOST, PORT))
-server.listen()
-print(f"Servidor escuchando en {HOST}:{PORT}")
+    def listen_for_messages(self):
+        while True:
+            try:
+                data, address = self.server_socket.recvfrom(1024)
+                message = data.decode()
+                print(f"Mensaje recibido de {address}: {message}")
+                if message.startswith("REGISTER"):
+                    self.register_user(message, address)
+                elif message.startswith("RESOLVE"):
+                    self.resolve_user(message, address)
+                elif message.startswith("DISCOVER"):
+                    response = f"{self.server_name}"
+                    self.server_socket.sendto(response.encode(), address)
+            except Exception as e:
+                print(f"Error en el servidor: {e}")
 
-while True:
-    conn, addr = server.accept()
-    clients.append(conn)
-    threading.Thread(target=handle_client, args=(conn, addr)).start()
+    def register_user(self, message, address):
+        _, username = message.split(" ")
+        if username in self.users:
+            response = f"ERROR El usuario '{username}' ya está registrado."
+        else:
+            self.users[username] = address
+            response = f"OK Usuario '{username}' registrado con éxito."
+        self.server_socket.sendto(response.encode(), address)
+
+    def resolve_user(self, message, address):
+        _, username = message.split(" ")
+        if username in self.users:
+            user_address = self.users[username]
+            response = f"OK {user_address[0]} {user_address[1]}"
+        else:
+            response = f"ERROR El usuario '{username}' no existe."
+        self.server_socket.sendto(response.encode(), address)
+
+    def get_ip(self):
+        return socket.gethostbyname(socket.gethostname())
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Uso: python server.py <NOMBRE_DEL_SERVIDOR>")
+        sys.exit(1)
+    server_name = sys.argv[1]
+    server = ChatServer(server_name)
+    server.start()
