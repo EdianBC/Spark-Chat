@@ -71,7 +71,8 @@ class ChatClient:
                 data, address = self.client_socket.recvfrom(1024)
                 print(data.decode())
             except:
-                break
+                # break
+                pass
 
     def start(self):
         print("Buscando servidores disponibles...")
