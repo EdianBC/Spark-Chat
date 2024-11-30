@@ -5,9 +5,26 @@ import sys
 class ChatClient:
     def __init__(self):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.message_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.message_socket.settimeout(3)
+        self.message_socket.bind(("", 0))
         self.server_address = None
         self.username = None
         self.running = True
+
+    def read_response(self, socket):
+        response = ''
+        while True:
+            part, _ = socket.recvfrom(1024)
+            response += part.decode()
+            if response.endswith('\r\n') or len(part) < 1024:
+                break
+        return response
+
+    def send_command(self, command) -> str:
+        self.client_socket.sendto(f"{command}".encode(), self.server_address)
+        return self.read_response(self.client_socket)
+        
 
     def discover_servers(self):
         self.client_socket.settimeout(3)
@@ -29,66 +46,90 @@ class ChatClient:
 
     def register_or_login(self):
         while True:
-            username = input("Introduce tu nombre de usuario único: ").strip()
+            username = input("Please write your username: ").strip()
             if " " in username:
-                print("El nombre de usuario no puede contener espacios.")
+                print("Username cannot contain spaces.")
                 continue
-            self.client_socket.sendto(f"REGISTER {username}".encode(), self.server_address)
-            response, _ = self.client_socket.recvfrom(1024)
-            if response.decode().startswith("OK"):
-                print(response.decode())
+            message_ip, message_port = self.message_socket.getsockname()
+            # self.client_socket.sendto(f"REGISTER {username} {message_ip} {message_port}".encode(), self.server_address)
+            # response, _ = self.client_socket.recvfrom(1024)
+            response = self.send_command(f"REGISTER {username} {message_port}")
+            if response.startswith("OK"):
+                # print(response.decode())
                 self.username = username
                 break
             else:
-                print(response.decode())
+                print(response)
 
-    def send_message(self):
+    def run(self):
+        print("Welcome to ✨Spark Chat✨! Use '@recipient' to send private messages (nudes not allowed yet!).")
+
         while self.running:
             message = input()
-            if message.startswith("@"):
-                try:
-                    recipient, content = message[1:].split(" ", 1)
-                    self.client_socket.sendto(f"RESOLVE {recipient}".encode(), self.server_address)
-                    response, _ = self.client_socket.recvfrom(1024)
-                    if response.decode().startswith("OK"):
-                        _, ip, port = response.decode().split()
-                        recipient_address = (ip, int(port))
-                        self.client_socket.sendto(f"{self.username}: {content}".encode(), recipient_address)
-                    else:
-                        print(response.decode())
-                except ValueError:
-                    print("Formato incorrecto. Usa: @destinatario mensaje")
-            elif message.lower() == "salir":
+         
+            if message.startswith("@") and not " " in message:
+                recipient = message[1:]
+                self.private_chat(recipient)
+
+            elif message.lower() == "/quit":
                 self.running = False
-                print("Saliendo del chat...")
+                print("Goodbye...")
                 break
+
             else:
-                print("Mensaje no válido. Usa: @destinatario mensaje")
+                print("Invalid command. Use '@recipient' to send private messages or '/quit' to exit.")
+
+    def private_chat(self, recipient):
+        # self.client_socket.sendto(f"RESOLVE {recipient}".encode(), self.server_address)
+        # response, _ = self.client_socket.recvfrom(1024)
+        response = self.send_command(f"RESOLVE {recipient}")
+        if response.startswith("OK"):
+            _, ip, port = response.split()
+            recipient_address = (ip, int(port))
+        else:
+            print(response)
+            return
+        
+        print(f"Starting private chat with {recipient}...")
+        while True:
+            message = input()
+            if message.lower() == "/back":
+                break
+
+            try:
+                self.message_socket.sendto(f"{self.username}: {message}".encode(), recipient_address)
+            except Exception as e:
+                print(f"Error sending message: {e}")
 
     def listen_for_messages(self):
+        
         while self.running:
             try:
-                data, address = self.client_socket.recvfrom(1024)
-                print(data.decode())
+                # data, address = self.message_socket.recvfrom(1024)
+                # print(data.decode())
+                message = self.read_response(self.message_socket)
+                if message:
+                    print(message)
             except:
                 # break
                 pass
 
     def start(self):
-        print("Buscando servidores disponibles...")
+        print("Searching for available servers...")
         servers = self.discover_servers()
         if not servers:
-            print("No se encontraron servidores.")
+            print("No servers were found :(")
             return
-        print("Servidores encontrados:")
+        print("Servers found:")
         for i, (name, ip) in enumerate(servers):
             print(f"{i + 1}. {name} ({ip})")
-        choice = int(input("Selecciona un servidor por número: ")) - 1
+        choice = int(input("Select a server by number: ")) - 1
         self.connect_to_server(servers[choice][1])
+        
         self.register_or_login()
 
         threading.Thread(target=self.listen_for_messages, daemon=True).start()
-        self.send_message()
+        self.run()
 
 
 if __name__ == "__main__":
