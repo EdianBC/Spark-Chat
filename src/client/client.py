@@ -1,6 +1,7 @@
 import socket
 import threading
-import sys
+import os
+import json
 
 class ChatClient:
     def __init__(self):
@@ -8,9 +9,13 @@ class ChatClient:
         self.message_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.message_socket.settimeout(3)
         self.message_socket.bind(("", 0))
+
         self.server_address = None
+        self.server_name = None
         self.username = None
         self.running = True
+        self.actual_chat = None
+        self.interlocutor = None
 
     def read_response(self, socket):
         response = ''
@@ -41,8 +46,9 @@ class ChatClient:
             pass
         return servers
 
-    def connect_to_server(self, server_ip):
-        self.server_address = (server_ip, 12345)
+    def connect_to_server(self, server):
+        self.server_address = (server[1], 12345)
+        self.server_name = server[0]
 
     def register_or_login(self):
         while True:
@@ -62,14 +68,17 @@ class ChatClient:
                 print(response)
 
     def run(self):
-        print("Welcome to ✨Spark Chat✨! Use '@recipient' to send private messages (nudes not allowed yet!).")
+
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(f"Welcome to ✨Spark Chat✨{self.username}! Use '@recipient' to send private messages (nudes not allowed yet!).")
 
         while self.running:
             message = input()
          
             if message.startswith("@") and not " " in message:
-                recipient = message[1:]
-                self.private_chat(recipient)
+                self.interlocutor = message[1:]
+                self.actual_chat = self.load_chat(self.interlocutor)
+                self.private_chat()
 
             elif message.lower() == "/quit":
                 self.running = False
@@ -79,10 +88,10 @@ class ChatClient:
             else:
                 print("Invalid command. Use '@recipient' to send private messages or '/quit' to exit.")
 
-    def private_chat(self, recipient):
+    def private_chat(self):
         # self.client_socket.sendto(f"RESOLVE {recipient}".encode(), self.server_address)
         # response, _ = self.client_socket.recvfrom(1024)
-        response = self.send_command(f"RESOLVE {recipient}")
+        response = self.send_command(f"RESOLVE {self.interlocutor}")
         if response.startswith("OK"):
             _, ip, port = response.split()
             recipient_address = (ip, int(port))
@@ -90,29 +99,66 @@ class ChatClient:
             print(response)
             return
         
-        print(f"Starting private chat with {recipient}...")
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(f"Starting private chat with {self.interlocutor}...")
+        self.print_previous_chat()
+
         while True:
             message = input()
             if message.lower() == "/back":
+
+                with open(f"chats/{self.server_name}-{self.username}-{self.interlocutor}.json", "w") as file:
+                    file.write(json.dumps(self.actual_chat))
+                
+                self.actual_chat = None
+                self.interlocutor = None
+
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"Welcome to ✨Spark Chat✨ {self.username}! Use '@recipient' to send private messages (nudes not allowed yet!).")
                 break
 
             try:
+                self.actual_chat.append(message)
                 self.message_socket.sendto(f"{self.username}: {message}".encode(), recipient_address)
             except Exception as e:
                 print(f"Error sending message: {e}")
 
-    def listen_for_messages(self):
+    def print_previous_chat(self):
         
+        for message in self.actual_chat:
+            print(message)
+
+    def load_chat(self, interlocutor): 
+        os.makedirs("chats", exist_ok=True)
+        try:
+            with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "r") as file:
+                chat = json.loads(file.read())
+        except:
+            chat = []
+        return chat
+
+    def listen_for_messages(self):
         while self.running:
             try:
                 # data, address = self.message_socket.recvfrom(1024)
                 # print(data.decode())
                 message = self.read_response(self.message_socket)
                 if message:
-                    print(message)
+                    sender = message.split(":")[0]
+
+                    if sender == self.interlocutor:
+                        self.actual_chat.append(message)
+                        print(message)
+                    else:
+                        chat = self.load_chat(sender)
+                        chat.append(message)
+                        with open(f"chats/{self.server_name}-{self.username}-{sender}.json", "w") as file:
+                            file.write(json.dumps(chat))
+                        
             except:
                 # break
                 pass
+
 
     def start(self):
         print("Searching for available servers...")
@@ -124,7 +170,7 @@ class ChatClient:
         for i, (name, ip) in enumerate(servers):
             print(f"{i + 1}. {name} ({ip})")
         choice = int(input("Select a server by number: ")) - 1
-        self.connect_to_server(servers[choice][1])
+        self.connect_to_server(servers[choice])
         
         self.register_or_login()
 
