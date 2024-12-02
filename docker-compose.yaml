@@ -1,0 +1,88 @@
+version: '3.8'
+
+volumes:
+  user_data:
+    driver: local
+
+networks:
+  server_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+  client_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.2.0/24
+
+services:
+  router:
+    image: router-image
+    container_name: router
+    networks:
+      server_network:
+        ipv4_address: 192.168.1.254
+      client_network:
+        ipv4_address: 192.168.2.254
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    sysctls:
+      net.ipv4.ip_forward: 1
+    stdin_open: true
+    tty: true
+
+  server:
+    image: server-image
+    container_name: server
+    networks:
+      server_network:
+        ipv4_address: 192.168.1.2
+    stdin_open: true
+    tty: true
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+
+  client1:
+    image: client-image
+    container_name: client1
+    networks:
+      client_network:
+        ipv4_address: 192.168.2.2
+    stdin_open: true
+    tty: true
+    extra_hosts:
+      - "gateway:192.168.2.254"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+
+  client2:
+    image: client-image
+    container_name: client2
+    networks:
+      client_network:
+        ipv4_address: 192.168.2.3
+    stdin_open: true
+    tty: true
+    extra_hosts:
+      - "gateway:192.168.2.254"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+
+  client3:
+    image: client-image
+    container_name: client3
+    networks:
+      client_network:
+        ipv4_address: 192.168.2.4
+    stdin_open: true
+    tty: true
+    extra_hosts:
+      - "gateway:192.168.2.254"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
