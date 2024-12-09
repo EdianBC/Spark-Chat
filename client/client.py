@@ -20,6 +20,7 @@ class chat_client:
         self.pending_list = {}
         self.pending_lock = threading.Lock()
 
+        self.contact_list = {}
 
     def read_response(self, socket):
         response = ''
@@ -40,25 +41,26 @@ class chat_client:
             return response
         except Exception as e:
             return f"ERROR in communication with server: {e}"
-            
         
-    def send_message(self, recipient, address, message):
+        
+    def send_message(self, recipient, message):
         try:
+            address = self.contact_list.get(recipient)
             # print(f"Sending message to {recipient}")
+            if not address:
+                address = self.resolve_user(recipient)
+
             if self.is_user_online(address):
                 # print("User is online")
                 self.message_socket.sendto(message.encode(), address)
                 return True
             else:
                 # print("User is offline")
-                response = self.send_command(f"RESOLVE {recipient}")
-                if response.startswith("OK"):
-                    # print("User resolved")
-                    _, ip, port = response.split()
-                    recipient_address = (ip, int(port))
-                    if self.is_user_online(recipient_address):
+                address = self.resolve_user(recipient)
+                if address:
+                    if self.is_user_online(address):
                         # print("User is online2")
-                        self.message_socket.sendto(message.encode(), recipient_address)
+                        self.message_socket.sendto(message.encode(), address)
                         return True
                     else:
                         # print("User is still offline")
@@ -76,6 +78,16 @@ class chat_client:
                 self.pending_list[recipient].append(message)
             else:
                 self.pending_list[recipient] = [message]
+
+
+    def resolve_user(self, username):
+        response = self.send_command(f"RESOLVE {username}")
+        if response.startswith("OK"):
+            _, ip, port = response.split()
+            self.contact_list[username] = (ip, int(port))
+            return (ip, int(port))
+        else:
+            return None
 
 
     def discover_servers(self):
@@ -137,6 +149,7 @@ class chat_client:
                     _, sender, text = message.split(" ", 2)
                     chat = self.load_chat(sender)
                     chat.append({"sender":sender, "text":text, "readed":False})
+                    self.contact_list[sender] = address
                     # with self.file_lock:
                     #     with open(f"chats/{self.server_name}-{self.username}-{sender}.json", "w") as file:
                     #         file.write(json.dumps(chat))
@@ -172,7 +185,7 @@ class chat_client:
                     pending_users = list(self.pending_list.keys())
                 for username in pending_users:
                     with self.pending_lock:
-                        while self.send_message(username, ("1.1.2.3", 55832), self.pending_list[username][0]):
+                        while self.send_message(username, self.pending_list[username][0]):
                             self.pending_list[username].pop(0)
                             if len(self.pending_list[username]) == 0:
                                 del self.pending_list[username]
@@ -201,9 +214,8 @@ if __name__ == "__main__":
 TODO:
 - [x] Change to TCP at least for sending messages (one socket UDP for pinging and one thread with TCP for every conversation)
 - [x] Dockerize
-- [x] Implement what happens if the server is down (user search for new server)
+- [x] Implement what happens if the server is down (auto search of new server)
 - [x] Update to sqlite
-- [x] Add contact list
 """
 
 

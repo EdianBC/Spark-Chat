@@ -140,17 +140,6 @@ class console_app:
         try:   
             os.system('cls' if os.name == 'nt' else 'clear')
             print(f"Starting private chat with {self.interlocutor}. Type '/back' to return to the main menu.")
-
-            response = self.chat_client.send_command(f"RESOLVE {self.interlocutor}")
-            if response.startswith("OK"):
-                _, ip, port = response.split()
-                recipient_address = (ip, int(port))
-            else:
-                print(response)
-                self.interlocutor = None
-                self.update_chat_flag = False
-                time.sleep(3)
-                return "MAIN"
             
             self.print_chat(self.chat_client.load_chat(self.interlocutor))
     
@@ -171,7 +160,7 @@ class console_app:
                     self.chat_client.save_chat(chat, self.interlocutor)
 
                     message = f"MESSAGE {self.username} {command}"
-                    if not self.chat_client.send_message(self.interlocutor, recipient_address, message):
+                    if not self.chat_client.send_message(self.interlocutor, message):
                         self.chat_client.add_to_pending_list(self.interlocutor, message)
 
                     # if self.chat_client.is_user_online(recipient_address):
@@ -202,67 +191,4 @@ if __name__ == "__main__":
     app.run_ui()
 
 
-"""
-TODO:
-- [x] Separate ui from backend
-- [x] Change to TCP at least for sending messages
-- [x] Implement service to send messages that failed to be sent
-- [x] Dockerize
-- [x] Implement what happens if the server is down (user search for new server)
-- [x] Update to sqlite
-"""
 
-"""
-#Server
-import socket
-
-def start_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('0.0.0.0', 12345))
-    server_socket.listen(5)
-    print("Server started and listening on port 12345")
-
-    while True:
-        client_socket, client_address = server_socket.accept()
-        print(f"Connection from {client_address}")
-        handle_client(client_socket)
-
-def handle_client(client_socket):
-    while True:
-        try:
-            message = client_socket.recv(1024).decode('utf-8')
-            if not message:
-                break
-            print(f"Received: {message}")
-            response = f"Echo: {message}"
-            client_socket.send(response.encode('utf-8'))
-        except ConnectionResetError:
-            break
-    client_socket.close()
-
-if __name__ == "__main__":
-    start_server()
-"""
-
-"""
-#Client
-import socket
-
-def start_client():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(('127.0.0.1', 12345))
-    print("Connected to server")
-
-    while True:
-        message = input("Enter message to send: ")
-        if message.lower() == 'exit':
-            break
-        client_socket.send(message.encode('utf-8'))
-        response = client_socket.recv(1024).decode('utf-8')
-        print(f"Received from server: {response}")
-
-    client_socket.close()
-
-if __name__ == "__main__":
-    start_client()
-"""
