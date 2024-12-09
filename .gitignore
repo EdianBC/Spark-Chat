@@ -1,3 +1,7 @@
 server/users.json
 client/chats
 test.py
+
+__pycache__/
+*.pyc
+*.pyo

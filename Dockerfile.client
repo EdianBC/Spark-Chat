@@ -3,11 +3,15 @@ FROM python:3.12-slim
 RUN apt-get update && apt-get install -y \
     build-essential \
     iputils-ping \
-    iproute2 && \
+    iproute2 \
+    dos2unix && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY ./client /app
-RUN chmod +x ./startup.sh
+
+RUN dos2unix /app/startup.sh
+RUN chmod +x /app/startup.sh
+
 
 CMD ["sh", "-c", "/app/startup.sh && tail -f /dev/null"]

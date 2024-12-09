@@ -103,6 +103,16 @@ class chat_client:
                 servers.append((server_name, address[0]))
         except socket.timeout:
             pass
+
+        if len(servers) == 0:
+            try:
+                self.client_socket.sendto("DISCOVER".encode(), ("192.168.3.2", 12345))
+                while True:
+                    data, address = self.client_socket.recvfrom(1024)
+                    server_name = data.decode()
+                    servers.append((server_name, address[0]))
+            except socket.timeout:
+                pass
         return servers
 
 
