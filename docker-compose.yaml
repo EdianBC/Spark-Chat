@@ -9,7 +9,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 192.168.1.0/24
+        - subnet: 192.168.3.0/24
   client_network:
     driver: bridge
     ipam:
@@ -22,7 +22,7 @@ services:
     container_name: router
     networks:
       server_network:
-        ipv4_address: 192.168.1.254
+        ipv4_address: 192.168.3.254
       client_network:
         ipv4_address: 192.168.2.254
     cap_add:
@@ -38,7 +38,7 @@ services:
     container_name: server
     networks:
       server_network:
-        ipv4_address: 192.168.1.2
+        ipv4_address: 192.168.3.2
     stdin_open: true
     tty: true
     privileged: true

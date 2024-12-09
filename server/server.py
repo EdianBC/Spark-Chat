@@ -38,18 +38,21 @@ class ChatServer:
                 print(f"Server error: {e}")
 
     def register_user(self, message, client_address):
-        _, username, port = message.split(" ")
+        try:
+            _, username, port = message.split(" ")
 
-        new_user = username not in self.users.keys()
-        self.users[username] = (client_address[0], int(port))
-        
-        if new_user:
-            response = f"OK User {username} listening on {client_address[0]}:{port}. Successfully registered."
+            new_user = username not in self.users.keys()
+            self.users[username] = (client_address[0], int(port))
             
-            with open("users.json", "w") as file:
-                file.write(json.dumps(self.users))
-        else:
-            response = f"OK User {username} listening on {client_address[0]}:{port}. Successfully updated."
+            if new_user:
+                response = f"OK User {username} listening on {client_address[0]}:{port}. Successfully registered."
+                
+                with open("users.json", "w") as file:
+                    file.write(json.dumps(self.users))
+            else:
+                response = f"OK User {username} listening on {client_address[0]}:{port}. Successfully updated."
+        except Exception as e:
+            response = f"ERROR registering user '{username}': {e}"
 
         print(response)
         self.server_socket.sendto(response.encode(), client_address)

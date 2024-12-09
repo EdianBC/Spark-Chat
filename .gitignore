@@ -1,3 +1,3 @@
-src/server/users.json
-src/client/chats
+server/users.json
+client/chats
 test.py
