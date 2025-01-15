@@ -1,9 +1,5 @@
 version: '3.8'
 
-volumes:
-  user_data:
-    driver: local
-
 networks:
   server_network:
     driver: bridge
@@ -86,3 +82,5 @@ services:
     privileged: true
     cap_add:
       - NET_ADMIN
+
+      

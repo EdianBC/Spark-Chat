@@ -1,0 +1,33 @@
+docker build -t image-name -f Dockerfile.name .
+docker rmi image-name
+docker rm container-name
+docker images
+docker ps -a          #ver contenedores
+docker run -d --name container-name --cap-add=NET_ADMIN image-name
+docker logs container-name
+docker network create --driver bridge --subnet 192.168.3.0/24 network-name
+docker volume create volume-name
+docker exec -it container-name bash
+docker start container-name
+docker stop container-name
+
+
+
+
+Pipeline:
+
+docker network create --driver bridge --subnet 192.168.3.0/24 server_network
+
+docker network create --driver bridge --subnet 192.168.2.0/24 client_network
+
+docker run -d --name router --network server_network --ip 192.168.3.254 --cap-add NET_ADMIN --privileged --sysctl net.ipv4.ip_forward=1 -it router-imagem
+
+docker network connect --ip 192.168.2.254 client_network router
+
+docker run -d --name server --network server_network --ip 192.168.3.2 --cap-add NET_ADMIN --privileged -it server-imagem
+
+docker run -d --name client1 --network client_network --ip 192.168.2.2 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client-imagem
+
+docker run -d --name client2 --network client_network --ip 192.168.2.3 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client-imagem
+
+docker run -d --name client3 --network client_network --ip 192.168.2.4 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client-imagem
