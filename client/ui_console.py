@@ -10,6 +10,7 @@ class console_app:
         self.running = True
         self.interlocutor = None
         self.update_chat_flag = False
+
         self.chat_client = client.chat_client()
 
 
@@ -49,8 +50,6 @@ class console_app:
         if status != "OK":
             return
         time.sleep(1)
-
-        self.chat_client.run_background()
         
         status = "MAIN"
 
@@ -107,7 +106,7 @@ class console_app:
                 response = self.chat_client.send_command(f"REGISTER {username} {message_port}")
                 if response.startswith("OK"):
                     self.username = username
-                    self.chat_client.username = username
+                    self.chat_client.set_user(username)
                     return "OK"
                 else:
                     print(response)
@@ -155,9 +154,9 @@ class console_app:
                     return "MAIN"
                 
                 elif command:
-                    chat = self.chat_client.load_chat(self.interlocutor)
-                    chat.append({"sender":self.username, "text":command, "readed":True})
-                    self.chat_client.save_chat(chat, self.interlocutor)
+                    chat = self.chat_client.load_chat(self.interlocutor)  ############### Delete this line
+                    chat.append({"sender":self.username, "text":command, "readed":True}) ############### Delete this line
+                    self.chat_client.save_chat(chat, self.interlocutor) ############### Delete this line
 
                     message = f"MESSAGE {self.username} {command}"
                     if not self.chat_client.send_message(self.interlocutor, message):
