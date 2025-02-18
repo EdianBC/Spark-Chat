@@ -243,7 +243,6 @@ if __name__ == "__main__":
 TODO:
 - [x] Change to TCP at least for sending messages (one socket UDP for pinging and one thread with TCP for every conversation)
 - [x] Implement what happens if the server is down (auto search of new server)
-- [x] Update to sqlite
 """
 
 

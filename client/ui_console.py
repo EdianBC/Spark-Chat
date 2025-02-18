@@ -24,6 +24,20 @@ class console_app:
         for message in chat:
             self.print_message(message)
 
+    def print_unseen_resume(self):
+        resume = self.chat_client.db.get_unseen_resume(self.username)
+
+        if not resume:
+            print("No new messages.")
+            return
+
+        print("New messages:")
+        for user, count in resume:
+            if count == 1:
+                print(f"{user}: 1 unseen message.")
+            else:
+                print(f"{user}: {count} unseen messages.")
+
 
     def update_chat(self, interlocutor):
         while self.update_chat_flag:
@@ -117,9 +131,9 @@ class console_app:
     
     def main_menu_ui(self):
         os.system('cls' if os.name == 'nt' else 'clear')
-        print(f"Welcome, {self.username}, to ✨Spark Chat✨! \nAvailable commands:\n*Use '@recipient' to enter a private chat (nudes not allowed yet!).\n*Use '/quit' to exit.")
+        print(f"Welcome, {self.username}, to ✨Spark Chat✨!  Type /help if you need it.")
 
-        # print_chats()
+        self.print_unseen_resume()
 
         while True:
             command = input()

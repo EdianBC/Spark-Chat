@@ -101,3 +101,17 @@ class user_db:
 
         # print(f"Visto {user1} - {user2}")
         
+    def get_unseen_resume(self, user):
+        conn = sqlite3.connect(self.db_route, check_same_thread=False)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT author, COUNT(*) 
+            FROM messages 
+            WHERE receiver = ? AND seen = 0
+            GROUP BY author
+        ''', (user,))
+        unseen_resume = cursor.fetchall()
+
+        conn.close()
+        return unseen_resume
