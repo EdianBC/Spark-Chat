@@ -141,26 +141,29 @@ class chat_client:
 
 
     def load_chat(self, interlocutor):
-        os.makedirs("chats", exist_ok=True)
-        chat = []
-        try:
-            with self.file_lock:
-                with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "r") as file:
-                    chat = json.loads(file.read())
-        except Exception as e:
-            # print(f'Problem loading chat: {e}')
-            pass
-        # print(len(chat))
+        # os.makedirs("chats", exist_ok=True)
+        # chat = []
+        # try:
+        #     with self.file_lock:
+        #         with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "r") as file:
+        #             chat = json.loads(file.read())
+        # except Exception as e:
+        #     # print(f'Problem loading chat: {e}')
+        #     pass
+        # # print(len(chat))
+
+        chat = self.db.get_chat(self.username, interlocutor)
+
         return chat
 
-    def save_chat(self, chat, interlocutor):
-        os.makedirs("chats", exist_ok=True)
-        try:
-            with self.file_lock:
-                with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "w") as file:
-                    file.write(json.dumps(chat))
-        except Exception as e:
-            print(f"ERROR saving chat: {e}")
+    # def save_chat(self, chat, interlocutor):
+    #     os.makedirs("chats", exist_ok=True)
+    #     try:
+    #         with self.file_lock:
+    #             with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "w") as file:
+    #                 file.write(json.dumps(chat))
+    #     except Exception as e:
+    #         print(f"ERROR saving chat: {e}")
 
     def listen_for_messages(self):
         # print("Listening for messages")
@@ -171,14 +174,14 @@ class chat_client:
                 # print(f"Message from {address}: {message}")
                 if message.startswith("MESSAGE"):
                     _, sender, text = message.split(" ", 2)
-                    chat = self.load_chat(sender) ############################Delete this line
-                    chat.append({"sender": sender, "text": text, "readed":False}) ############################Delete this line
+                    # chat = self.load_chat(sender) ############################Delete this line
+                    # chat.append({"sender": sender, "text": text, "readed":False}) ############################Delete this line
 
                     self.db.insert_new_message(sender, self.username, text, False)
 
                     self.contact_list[sender] = address
                 
-                    self.save_chat(chat, sender) ############################Delete this line
+                    # self.save_chat(chat, sender) ############################Delete this line
                 elif message.startswith("PING"):
                     self.message_socket.sendto("PONG".encode(), address)
             except Exception as e:

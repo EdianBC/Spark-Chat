@@ -13,31 +13,30 @@ class console_app:
 
         self.chat_client = client.chat_client()
 
+    def print_message(self, message):
+        if(message[1] == self.username):
+            print(f"{message[3]} [ID: {message[0]}, Date: {message[4]}]")
+        else:
+            print(f"{message[1]}: {message[3]} [ID: {message[0]}, Date: {message[4]}]")
 
-    def print_chat(self, chat):
+    def print_chat(self, interlocutor):
+        chat = self.chat_client.load_chat(interlocutor)
         for message in chat:
-            if message["sender"] == self.username:
-                print(message["text"])
-            else:
-                print(f"{message['sender']}: {message['text']}")
-            message["readed"] = True
-        self.chat_client.save_chat(chat, self.interlocutor)
+            self.print_message(message)
 
 
     def update_chat(self, interlocutor):
         while self.update_chat_flag:
-            changed_something = False
-            chat = self.chat_client.load_chat(interlocutor)
-            for message in chat:
-                if not message["readed"]:
-                    changed_something = True
-                    if message["sender"] == self.username:
-                        print(message["text"])
-                    else:
-                        print(f"{message['sender']}: {message['text']}")
-                    message["readed"] = True
-            if changed_something:
-                self.chat_client.save_chat(chat, interlocutor)
+            unseen = self.chat_client.db.get_unseen_messages(self.username, interlocutor)
+            # print(unseen)
+            # time.sleep(1)
+            
+            for message in unseen:
+                self.print_message(message)
+
+            # print(f"Chat u[pdated {self.username} - {interlocutor}")
+            self.chat_client.db.set_messages_as_seen(self.username, interlocutor)
+            time.sleep(0.1)
 
 
     def run_ui(self):
@@ -140,7 +139,7 @@ class console_app:
             os.system('cls' if os.name == 'nt' else 'clear')
             print(f"Starting private chat with {self.interlocutor}. Type '/back' to return to the main menu.")
             
-            self.print_chat(self.chat_client.load_chat(self.interlocutor))
+            self.print_chat(self.interlocutor)
     
             self.update_chat_flag = True
             threading.Thread(target=self.update_chat, args=(self.interlocutor,), daemon=True).start()
@@ -154,9 +153,9 @@ class console_app:
                     return "MAIN"
                 
                 elif command:
-                    chat = self.chat_client.load_chat(self.interlocutor)  ############### Delete this line
-                    chat.append({"sender":self.username, "text":command, "readed":True}) ############### Delete this line
-                    self.chat_client.save_chat(chat, self.interlocutor) ############### Delete this line
+                    # chat = self.chat_client.load_chat(self.interlocutor)  ############### Delete this line
+                    # chat.append({"sender":self.username, "text":command, "readed":True}) ############### Delete this line
+                    # self.chat_client.save_chat(chat, self.interlocutor) ############### Delete this line
 
                     message = f"MESSAGE {self.username} {command}"
                     if not self.chat_client.send_message(self.interlocutor, message):
