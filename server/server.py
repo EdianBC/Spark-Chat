@@ -2,12 +2,15 @@ import socket
 import threading
 import sys
 import json
+import sqlite3
+
 
 class ChatServer:
     def __init__(self, server_name):
         self.server_name = server_name
         self.users = {}
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_address = ("", 12345)
 
     def start(self):
@@ -79,3 +82,13 @@ if __name__ == "__main__":
     server_name = sys.argv[1]
     server = ChatServer(server_name)
     server.start()
+
+
+
+'''
+Search others servers
+Ask k of them to store a copy of the user database
+I see that they not die, if they do I ask another one
+They see that I not die, if I do they keep my data
+If someone ask me for a user I don't have I ask the others
+'''

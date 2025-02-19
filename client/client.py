@@ -123,7 +123,7 @@ class chat_client:
 
         if len(servers) == 0: #Parchecito uwu
             try:
-                self.client_socket.sendto("DISCOVER".encode(), ("192.168.3.2", 12345))
+                self.client_socket.sendto("DISCOVER".encode(), ("192.168.3.3", 12345))
                 while True:
                     data, address = self.client_socket.recvfrom(1024)
                     server_name = data.decode()
