@@ -36,7 +36,7 @@ class user_db:
         conn.commit()
         conn.close()
 
-        print(f"Base de datos creada para el usuario: {username}")
+        # print(f"Base de datos creada para el usuario: {username}")
 
     
     def insert_new_message(self, author, receiver, text, seen):

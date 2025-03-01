@@ -121,15 +121,15 @@ class chat_client:
         except socket.timeout:
             pass
 
-        if len(servers) == 0: #Parchecito uwu
-            try:
-                self.client_socket.sendto("DISCOVER".encode(), ("192.168.3.3", 12345))
-                while True:
-                    data, address = self.client_socket.recvfrom(1024)
-                    server_name = data.decode()
-                    servers.append((server_name, address[0]))
-            except socket.timeout:
-                pass
+        # if len(servers) == 0: #Parchecito uwu
+        #     try:
+        #         self.client_socket.sendto("DISCOVER".encode(), ("192.168.3.3", 12345))
+        #         while True:
+        #             data, address = self.client_socket.recvfrom(1024)
+        #             server_name = data.decode()
+        #             servers.append((server_name, address[0]))
+        #     except socket.timeout:
+        #         pass
         return servers
 
     def connect_to_server(self, server):
@@ -141,29 +141,11 @@ class chat_client:
 
 
     def load_chat(self, interlocutor):
-        # os.makedirs("chats", exist_ok=True)
-        # chat = []
-        # try:
-        #     with self.file_lock:
-        #         with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "r") as file:
-        #             chat = json.loads(file.read())
-        # except Exception as e:
-        #     # print(f'Problem loading chat: {e}')
-        #     pass
-        # # print(len(chat))
 
         chat = self.db.get_chat(self.username, interlocutor)
 
         return chat
 
-    # def save_chat(self, chat, interlocutor):
-    #     os.makedirs("chats", exist_ok=True)
-    #     try:
-    #         with self.file_lock:
-    #             with open(f"chats/{self.server_name}-{self.username}-{interlocutor}.json", "w") as file:
-    #                 file.write(json.dumps(chat))
-    #     except Exception as e:
-    #         print(f"ERROR saving chat: {e}")
 
     def listen_for_messages(self):
         # print("Listening for messages")
@@ -174,14 +156,11 @@ class chat_client:
                 # print(f"Message from {address}: {message}")
                 if message.startswith("MESSAGE"):
                     _, sender, text = message.split(" ", 2)
-                    # chat = self.load_chat(sender) ############################Delete this line
-                    # chat.append({"sender": sender, "text": text, "readed":False}) ############################Delete this line
-
+ 
                     self.db.insert_new_message(sender, self.username, text, False)
 
                     self.contact_list[sender] = address
                 
-                    # self.save_chat(chat, sender) ############################Delete this line
                 elif message.startswith("PING"):
                     self.message_socket.sendto("PONG".encode(), address)
             except Exception as e:
@@ -228,8 +207,7 @@ class chat_client:
     def run_background(self):
         # print("Starting background threads")
         threading.Thread(target=self.listen_for_messages, daemon=True).start()
-        threading.Thread(target=self.send_pending_messages,
-                         daemon=True).start()
+        threading.Thread(target=self.send_pending_messages, daemon=True).start()
         # print("Background threads started")
         time.sleep(1)
 
