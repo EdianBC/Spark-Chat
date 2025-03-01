@@ -105,6 +105,18 @@ class chat_client:
             return (ip, int(port))
         else:
             return None
+        
+    def register_user(self, username):
+        try:
+            message_ip, message_port = self.message_socket.getsockname()
+            response = self.send_command(f"REGISTER {username} {message_ip} {message_port}")
+            if response.startswith("OK"):
+                self.set_user(username)
+                return True
+            return False
+        except Exception as e:
+            print(f"Registration error: {e}")
+            return False
 
     def discover_servers(self):
         self.client_socket.settimeout(3)
@@ -221,60 +233,4 @@ if __name__ == "__main__":
 TODO:
 - [x] Change to TCP at least for sending messages (one socket UDP for pinging and one thread with TCP for every conversation)
 - [x] Implement what happens if the server is down (auto search of new server)
-"""
-
-
-"""
-#Server
-import socket
-
-def start_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('0.0.0.0', 12345))
-    server_socket.listen(5)
-    print("Server started and listening on port 12345")
-
-    while True:
-        client_socket, client_address = server_socket.accept()
-        print(f"Connection from {client_address}")
-        handle_client(client_socket)
-
-def handle_client(client_socket):
-    while True:
-        try:
-            message = client_socket.recv(1024).decode('utf-8')
-            if not message:
-                break
-            print(f"Received: {message}")
-            response = f"Echo: {message}"
-            client_socket.send(response.encode('utf-8'))
-        except ConnectionResetError:
-            break
-    client_socket.close()
-
-if __name__ == "__main__":
-    start_server()
-"""
-
-"""
-#Client
-import socket
-
-def start_client():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(('127.0.0.1', 12345))
-    print("Connected to server")
-
-    while True:
-        message = input("Enter message to send: ")
-        if message.lower() == 'exit':
-            break
-        client_socket.send(message.encode('utf-8'))
-        response = client_socket.recv(1024).decode('utf-8')
-        print(f"Received from server: {response}")
-
-    client_socket.close()
-
-if __name__ == "__main__":
-    start_client()
 """
