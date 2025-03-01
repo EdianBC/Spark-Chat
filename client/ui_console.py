@@ -5,8 +5,7 @@ import threading
 
 class console_app:
     def __init__(self):
-        self.server_name = None
-        self.username = None
+        
         self.running = True
         self.interlocutor = None
         self.update_chat_flag = False
@@ -14,7 +13,7 @@ class console_app:
         self.chat_client = client.chat_client()
 
     def print_message(self, message):
-        if(message[1] == self.username):
+        if(message[1] == self.chat_client.username):
             print(f"{message[3]} [ID: {message[0]}, Date: {message[4]}]")
         else:
             print(f"{message[1]}: {message[3]} [ID: {message[0]}, Date: {message[4]}]")
@@ -25,7 +24,7 @@ class console_app:
             self.print_message(message)
 
     def print_unseen_resume(self):
-        resume = self.chat_client.db.get_unseen_resume(self.username)
+        resume = self.chat_client.db.get_unseen_resume(self.chat_client.username)
 
         if not resume:
             print("No new messages.")
@@ -41,15 +40,15 @@ class console_app:
 
     def update_chat(self, interlocutor):
         while self.update_chat_flag:
-            unseen = self.chat_client.db.get_unseen_messages(self.username, interlocutor)
+            unseen = self.chat_client.db.get_unseen_messages(self.chat_client.username, interlocutor)
             # print(unseen)
             # time.sleep(1)
             
             for message in unseen:
                 self.print_message(message)
 
-            # print(f"Chat u[pdated {self.username} - {interlocutor}")
-            self.chat_client.db.set_messages_as_seen(self.username, interlocutor)
+            # print(f"Chat u[pdated {self.chat_client.username} - {interlocutor}")
+            self.chat_client.db.set_messages_as_seen(self.chat_client.username, interlocutor)
             time.sleep(0.1)
 
 
@@ -116,13 +115,10 @@ class console_app:
                     print("Username cannot contain spaces, hyphens or be empty.")
                     continue
                 message_ip, message_port = self.chat_client.message_socket.getsockname()
-                response = self.chat_client.send_command(f"REGISTER {username} {message_port}")
-                if response.startswith("OK"):
-                    self.username = username
-                    self.chat_client.set_user(username)
+                response = self.chat_client.register_user(username)
+                if response:
                     return "OK"
                 else:
-                    print(response)
                     return "NOT OK"
         except Exception as e:
             print(f"An error ocurred while registering: {e}")
@@ -131,7 +127,7 @@ class console_app:
     
     def main_menu_ui(self):
         os.system('cls' if os.name == 'nt' else 'clear')
-        print(f"Welcome, {self.username}, to ✨Spark Chat✨!  Type /help if you need it.")
+        print(f"Welcome, {self.chat_client.username}, to ✨Spark Chat✨!  Type /help if you need it.")
 
         self.print_unseen_resume()
 
@@ -168,24 +164,24 @@ class console_app:
                 
                 elif command:
                     # chat = self.chat_client.load_chat(self.interlocutor)  ############### Delete this line
-                    # chat.append({"sender":self.username, "text":command, "readed":True}) ############### Delete this line
+                    # chat.append({"sender":self.chat_client.username, "text":command, "readed":True}) ############### Delete this line
                     # self.chat_client.save_chat(chat, self.interlocutor) ############### Delete this line
 
-                    message = f"MESSAGE {self.username} {command}"
+                    message = f"MESSAGE {self.chat_client.username} {command}"
                     if not self.chat_client.send_message(self.interlocutor, message):
                         self.chat_client.add_to_pending_list(self.interlocutor, message)
 
                     # if self.chat_client.is_user_online(recipient_address):
-                    #     self.message_socket.sendto(f"MESSAGE {self.username} {message}".encode(), recipient_address)
+                    #     self.message_socket.sendto(f"MESSAGE {self.chat_client.username} {message}".encode(), recipient_address)
                     # else:
                     #     response = self.chat_client.send_command(f"RESOLVE {self.interlocutor}")
                     #     if response.startswith("OK"):
                     #         _, ip, port = response.split()
                     #         recipient_address = (ip, int(port))
                     #         if self.is_user_online(recipient_address):
-                    #             self.message_socket.sendto(f"MESSAGE {self.username} {message}".encode(), recipient_address)
+                    #             self.message_socket.sendto(f"MESSAGE {self.chat_client.username} {message}".encode(), recipient_address)
                     #         else:
-                    #             self.pending_list.append((self.interlocutor, f"MESSAGE {self.username} {message}"))
+                    #             self.pending_list.append((self.interlocutor, f"MESSAGE {self.chat_client.username} {message}"))
                         # print(f"User {self.interlocutor} is offline. Message will be sent when user is online.")
                 
         except Exception as e:

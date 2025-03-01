@@ -108,8 +108,10 @@ class chat_client:
         
     def register_user(self, username):
         try:
-            message_ip, message_port = self.message_socket.getsockname()
+            message_ip = self.get_ip()
+            _, message_port = self.message_socket.getsockname()
             response = self.send_command(f"REGISTER {username} {message_ip} {message_port}")
+            print(response)
             if response.startswith("OK"):
                 self.set_user(username)
                 return True
@@ -215,6 +217,9 @@ class chat_client:
             except Exception as e:
                 print(f"Error sending pending messages: {e}")
                 pass
+
+    def get_ip(self):
+        return socket.gethostbyname(socket.gethostname())
 
     def run_background(self):
         # print("Starting background threads")

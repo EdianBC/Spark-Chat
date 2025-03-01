@@ -3,7 +3,7 @@ import os
 
 class user_db:
     def __init__(self):
-        self.db_directory = "chats"
+        self.db_directory = "client/chats"
         self.db_route = ""
         # conn = sqlite3.connect("users.db")
 
@@ -57,7 +57,7 @@ class user_db:
             SELECT *
             FROM messages
             WHERE (author = ? AND receiver = ?)
-            OR (author = ? AND receiver = ?)
+            OR (author = ? AND receiver = ? AND seen = 1)
             ORDER BY date_time ASC
         ''', (user1, user2, user2, user1))
 
