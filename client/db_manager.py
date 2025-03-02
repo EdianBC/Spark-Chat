@@ -115,3 +115,40 @@ class user_db:
 
         conn.close()
         return unseen_resume
+    
+    def get_chat_previews(self, user):
+        '''
+        Returns a list of tuples with the author and the last message of each chat, ordered by date
+        '''
+        conn = sqlite3.connect(self.db_route, check_same_thread=False)
+        cursor = conn.cursor()
+
+        query = '''
+            WITH ranked_messages AS (
+                SELECT 
+                    CASE 
+                        WHEN author = ? THEN receiver 
+                        ELSE author 
+                    END AS chat_partner,
+                    text,
+                    date_time,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY 
+                            CASE 
+                                WHEN author = ? THEN receiver 
+                                ELSE author 
+                            END 
+                        ORDER BY date_time DESC
+                    ) AS rn
+                FROM messages
+                WHERE ? IN (author, receiver)
+            )
+            SELECT chat_partner, text
+            FROM ranked_messages
+            WHERE rn = 1
+            ORDER BY date_time DESC;
+        '''
+        cursor.execute(query, (user, user, user))
+        chat_previews = cursor.fetchall()
+        conn.close()
+        return chat_previews

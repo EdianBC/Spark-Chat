@@ -22,9 +22,21 @@ class chat_client:
         self.pending_list = {}
         self.pending_lock = threading.Lock()
 
+        self.server_down = False
+
         self.contact_list = {}
 
         self.db = db_manager.user_db()
+
+    def server_auto_reconnect(self):
+        while self.running:
+            # print("Checking server connection")
+            if self.server_down:
+                # print("Server down")
+                if self.auto_connect():
+                    self.server_down = False
+                    # print("Server reconnected")
+            time.sleep(3)
 
 
     def set_user(self, username):
@@ -51,6 +63,8 @@ class chat_client:
             response, _ = self.read_response(self.client_socket)
             return response
         except Exception as e:
+            self.server_down = True
+            # print(f"ERROR in communication with server: {e}")
             return f"ERROR in communication with server: {e}"
 
     def send_message(self, recipient, message):
@@ -143,6 +157,14 @@ class chat_client:
             self.server_name = server[0]
         except Exception as e:
             return f"ERROR connecting with server: {e}"
+        
+    def auto_connect(self):
+        servers = self.discover_servers()
+        if len(servers) == 0:
+            return False
+        
+        self.connect_to_server(servers[0])
+        return True
 
 
     def load_chat(self, interlocutor):
@@ -214,6 +236,7 @@ class chat_client:
         # print("Starting background threads")
         threading.Thread(target=self.listen_for_messages, daemon=True).start()
         threading.Thread(target=self.send_pending_messages, daemon=True).start()
+        threading.Thread(target=self.server_auto_reconnect, daemon=True).start()
         # print("Background threads started")
         time.sleep(1)
 
