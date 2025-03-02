@@ -48,7 +48,7 @@ class user_db:
 
         conn.close()
 
-    def get_chat(self, user1, user2):
+    def get_previous_chat(self, user1, user2):
         
         conn = sqlite3.connect(self.db_route, check_same_thread=False)
         cursor = conn.cursor()

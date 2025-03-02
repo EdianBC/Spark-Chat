@@ -135,15 +135,6 @@ class chat_client:
         except socket.timeout:
             pass
 
-        # if len(servers) == 0: #Parchecito uwu
-        #     try:
-        #         self.client_socket.sendto("DISCOVER".encode(), ("192.168.3.3", 12345))
-        #         while True:
-        #             data, address = self.client_socket.recvfrom(1024)
-        #             server_name = data.decode()
-        #             servers.append((server_name, address[0]))
-        #     except socket.timeout:
-        #         pass
         return servers
 
     def connect_to_server(self, server):
@@ -156,14 +147,12 @@ class chat_client:
 
     def load_chat(self, interlocutor):
 
-        chat = self.db.get_chat(self.username, interlocutor)
+        chat = self.db.get_previous_chat(self.username, interlocutor)
 
         return chat
 
 
     def listen_for_messages(self):
-        # print("Listening for messages")
-        # time.sleep(1)
         while self.running:
             try:
                 message, address = self.read_response(self.message_socket)

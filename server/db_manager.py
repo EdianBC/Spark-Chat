@@ -6,8 +6,8 @@ class server_db:
         self.db_directory = "server/db"
         self.db_route = ""
 
+
     def set_db(self, username):     
-        
         os.makedirs(self.db_directory, exist_ok=True)
         self.db_route = os.path.join(self.db_directory, f"{username}.db")
 
@@ -34,8 +34,8 @@ class server_db:
         conn.commit()
         conn.close()
 
-    def register_user(self, username, ip, port):
 
+    def register_user(self, username, ip, port):
         with sqlite3.connect(self.db_route, check_same_thread=False) as conn:
             cursor = conn.cursor()
             
@@ -64,7 +64,6 @@ class server_db:
         
         
     def resolve_user(self, username):
-        
         with sqlite3.connect(self.db_route, check_same_thread=False) as conn:
             cursor = conn.cursor()
             
@@ -72,10 +71,21 @@ class server_db:
                 SELECT ip, port FROM users WHERE username = ?
             ''', (username,))
             
-            ip, port = cursor.fetchone()
-
-            return ip, port
-            
+            address = cursor.fetchone()
+            # print(address)
+            return address
         
+
+    def get_bd_copy(self):
+        with sqlite3.connect(self.db_route, check_same_thread=False) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT username, ip, port FROM users
+            ''')
+
+            data = cursor.fetchall()
+            return data
+
 
     
