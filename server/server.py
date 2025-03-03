@@ -5,6 +5,8 @@ import json
 import db_manager
 import time
 import random
+# from termcolor import colored as col
+import struct
 
 
 HASH_MOD = 10**18+3
@@ -76,6 +78,8 @@ class ChatServer:
         # replicants_manager.start()
         info_updater = threading.Thread(target=self.info_updater, daemon=True)
         info_updater.start()
+
+        threading.Thread(target=self.multicast_listener, daemon=True).start()
 
         self.listen_for_messages()
 
@@ -578,6 +582,104 @@ class ChatServer:
         for c in s:
             hash_value = (hash_value * base + ord(c)) % mod
         return hash_value
+    
+
+
+    # region Multicast Stuff
+    def multicast_listener(self) -> None:
+        """
+        Function that listens for multicast requests.
+        When it receives the DISCOVER_SERVER message, it responds with its IP address.
+        """
+        MCAST_GRP = "224.0.0.1"
+        MCAST_PORT = 10003
+        DISCOVER_MSG = "DISCOVER_SERVER"
+        BUFFER_SIZE = 1024
+        # Crear socket UDP
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        # Permitir que varias instancias puedan reutilizar el puerto
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # Vincular el socket a todas las interfaces en el puerto MCAST_PORT
+        sock.bind(("", MCAST_PORT))
+
+        # Unirse al grupo multicast
+        mreq = struct.pack("=4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+        
+        print(f"[Muticast] Escuchando mensajes en {MCAST_GRP}:{MCAST_PORT}")
+        
+
+        while True:
+            try:
+                data, addr = sock.recvfrom(BUFFER_SIZE)
+                message = data.decode().strip()
+                print(f"Recibido mensaje: '{message}' desde {addr}")
+                if message.startswith(DISCOVER_MSG + ":"):
+                    local_ip = self.get_ip()
+                    _, rec_ip, rec_port = message.split(":")
+                    print(f"{rec_ip} {rec_port}")
+                    sock.sendto(local_ip.encode(), (rec_ip, int(rec_port)))
+                else:
+                    local_ip = self.get_ip()
+                    sock.sendto(local_ip.encode(), addr)
+            except Exception as e:
+                print(f"Error en el listener: {e}")
+                time.sleep(1)
+
+
+    def discover_servers(self, timeout: str = 1) -> list:
+        """
+        Sends a multicast request to discover servers and waits for responses.
+
+        :param timeout: Maximum time (in seconds) to wait for responses.
+        :return: List of IPs of the discovered servers.
+        """
+        MCAST_GRP = "224.0.0.1"
+        MCAST_PORT = 10003
+        MESSAGE = "DISCOVER_SERVER"
+        BUFFER_SIZE = 1024
+
+        # Crear socket UDP para enviar y recibir
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.settimeout(timeout)
+
+        # Configurar TTL del paquete multicast
+        ttl = struct.pack("b", 1)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+
+        # Enviar la petición multicast
+        try:
+            sock.sendto(MESSAGE.encode(), (MCAST_GRP, MCAST_PORT))
+        except Exception as e:
+            print(f"Error enviando el mensaje multicast: {e}")
+            return []
+
+        servers = []
+        start_time = time.time()
+        while True:
+            try:
+                data, addr = sock.recvfrom(BUFFER_SIZE)
+                server_ip = data.decode().strip()
+                servers.append(server_ip)
+                print(f"Servidor descubierto: {server_ip}")
+            except socket.timeout:
+                break
+            except Exception as e:
+                print(f"Error recibiendo datos: {e}")
+                break
+            if time.time() - start_time > timeout:
+                break
+
+        sock.close()
+
+        print(f"Servers descubiertos con multicast: {servers}")
+
+        return [("main", server) for server in servers]
+
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

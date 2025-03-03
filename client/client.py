@@ -4,6 +4,7 @@ import os
 import json
 import time
 import db_manager
+import struct
 
 
 class chat_client:
@@ -159,7 +160,8 @@ class chat_client:
             return f"ERROR connecting with server: {e}"
         
     def auto_connect(self):
-        servers = self.discover_servers()
+        # servers = self.discover_servers()
+        servers = self.discover_servers_multicast()
         if len(servers) == 0:
             return False
         
@@ -239,6 +241,59 @@ class chat_client:
         threading.Thread(target=self.server_auto_reconnect, daemon=True).start()
         # print("Background threads started")
         time.sleep(1)
+
+
+    def discover_servers_multicast(self, timeout: int = 3) -> list:
+        """
+        Sends a multicast request to discover servers and waits for responses.
+
+        :param timeout: Maximum time (in seconds) to wait for responses.
+        :return: List of discovered server IPs.
+        """
+        MCAST_GRP = "224.0.0.1"
+        MCAST_PORT = 10003
+        MESSAGE = "DISCOVER_SERVER"
+        BUFFER_SIZE = 1024
+
+        # Crear socket UDP para enviar y recibir
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.settimeout(timeout)
+
+        # Configurar TTL del paquete multicast
+        ttl = struct.pack("b", 1)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+
+        # Enviar la petición multicast
+        try:
+            sock.sendto(MESSAGE.encode(), (MCAST_GRP, MCAST_PORT))
+        except Exception as e:
+            print(f"Error enviando el mensaje multicast: {e}")
+            return []
+
+        print('a')
+
+        servers = []
+        start_time = time.time()
+        while True:
+            try:
+                data, addr = sock.recvfrom(BUFFER_SIZE)
+                server_ip = data.decode().strip()
+                servers.append(server_ip)
+                print(f"Servidor descubierto: {server_ip} (respuesta desde {addr})")
+            except socket.timeout:
+                break
+            except Exception as e:
+                print(f"Error recibiendo datos: {e}")
+                break
+            if time.time() - start_time > timeout:
+                break
+
+        sock.close()
+
+        servers = [("main", server) for server in servers]
+
+        return servers
+
 
 if __name__ == "__main__":
     # client = chat_client()

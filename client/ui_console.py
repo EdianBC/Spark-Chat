@@ -87,7 +87,8 @@ class console_app:
             os.system('cls' if os.name == 'nt' else 'clear')
             while True:
                 print("Searching for available servers...")
-                servers = self.chat_client.discover_servers()
+                # servers = self.chat_client.discover_servers()
+                servers = self.chat_client.discover_servers_multicast()
                 if not servers:
                     print("No servers were found :(")
                     choice = input("Do you want to search again? (y/n): ")
@@ -95,6 +96,7 @@ class console_app:
                         return "NOT OK"
                 else:
                     print("Servers found:")
+                    print(servers)
                     for i, (name, ip) in enumerate(servers):
                         print(f"{i + 1}. {name} ({ip})")
                     choice = int(input("Select a server by number: ")) - 1

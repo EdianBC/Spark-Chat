@@ -1,20 +1,10 @@
-# Dockerfile
-FROM python:3.9-alpine
+FROM python:3-alpine AS runtime
 
-# Instalamos utilidades para manipular la red
-RUN apk add --no-cache procps iptables
-
-# Habilitamos IP forwarding
+RUN apk update && apk add procps iptables iproute2
 RUN echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
-WORKDIR /app
+COPY ./router/router_init.sh /router_init.sh
+COPY ./router/multicast_proxy.py /multicast_proxy.py
+RUN chmod +x /router_init.sh
 
-# Copiamos el script de Python y el entrypoint
-COPY router/routerplus.py .
-COPY router/entrypoint.sh .
-
-# Damos permisos de ejecución al entrypoint
-RUN chmod +x entrypoint.sh
-
-# Al arrancar, se ejecuta el entrypoint
-CMD ["./entrypoint.sh"]
+CMD ["sh", "-c", "tail -f /dev/null"]

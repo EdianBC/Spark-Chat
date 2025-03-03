@@ -20,22 +20,22 @@ docker network create --driver bridge --subnet 192.168.3.0/24 server_network
 
 docker network create --driver bridge --subnet 192.168.2.0/24 client_network
 
-docker run -d --name router --network server_network --ip 192.168.3.254 --cap-add NET_ADMIN --privileged --sysctl net.ipv4.ip_forward=1 -it router
+docker run -d --name router --network server_network --ip 192.168.3.254 --cap-add NET_ADMIN --privileged --sysctl net.ipv4.ip_forward=1 -it routerplus
 
 docker network connect --ip 192.168.2.254 client_network router
 
-docker run -d --name server --network server_network --ip 192.168.3.3 --add-host gateway:192.168.3.254 --cap-add NET_ADMIN --privileged -it server
+docker exec -it router sh
 
-docker run -d --name client1 --network client_network --ip 192.168.2.5 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client
+./router_init.sh
 
-docker run -d --name client2 --network client_network --ip 192.168.2.3 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client
+docker run -d --name server0 --network server_network --ip 192.168.3.10 --add-host gateway:192.168.3.254 --cap-add NET_ADMIN --privileged -it server
 
-docker run -d --name client3 --network client_network --ip 192.168.2.4 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client
+docker run -d --name server1 --network server_network --ip 192.168.3.11 --add-host gateway:192.168.3.254 --cap-add NET_ADMIN --privileged -it server
 
+docker run -d --name client0 --network client_network --ip 192.168.2.10 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client
 
+docker run -d --name client1 --network client_network --ip 192.168.2.11 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client
 
-Routerplus pipeline:
+docker run -d --name client2 --network client_network --ip 192.168.2.12 --add-host gateway:192.168.2.254 --cap-add NET_ADMIN --privileged -it client
 
-docker run -d --name routerplus --cap-add NET_ADMIN --privileged --sysctl net.ipv4.ip_forward=1 -it routerplus
-docker network connect --ip 192.168.2.254 client_network routerplus
-docker network connect --ip 192.168.3.254 server_network routerplus
+docker exec -it clientx bash
