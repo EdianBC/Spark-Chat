@@ -162,7 +162,7 @@ if 'last_update' not in st.session_state:
 def discover_servers():
     try:
         # servers = st.session_state.chat_client.discover_servers()
-        servers = st.session_state.chat_client.discover_servers_multicast()
+        servers = st.session_state.chat_client.discover_servers()
         return servers
     except Exception as e:
         st.error(f"Error discovering servers: {e}")

@@ -160,8 +160,8 @@ class chat_client:
             return f"ERROR connecting with server: {e}"
         
     def auto_connect(self):
-        # servers = self.discover_servers()
-        servers = self.discover_servers_multicast()
+        servers = self.discover_servers()
+        # servers = self.discover_servers_multicast()
         if len(servers) == 0:
             return False
         

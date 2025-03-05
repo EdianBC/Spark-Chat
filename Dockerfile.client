@@ -10,8 +10,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY ./client /app
 
+RUN pip install --upgrade pip
+RUN pip install streamlit==1.29.0
+RUN pip install streamlit_autorefresh
 RUN dos2unix /app/startup.sh
 RUN chmod +x /app/startup.sh
 
+EXPOSE 8501
 
 CMD ["sh", "-c", "/app/startup.sh && tail -f /dev/null"]

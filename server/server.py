@@ -629,54 +629,54 @@ class ChatServer:
                 time.sleep(1)
 
 
-    def discover_servers(self, timeout: str = 1) -> list:
-        """
-        Sends a multicast request to discover servers and waits for responses.
+    # def discover_servers(self, timeout: str = 1) -> list:
+    #     """
+    #     Sends a multicast request to discover servers and waits for responses.
 
-        :param timeout: Maximum time (in seconds) to wait for responses.
-        :return: List of IPs of the discovered servers.
-        """
-        MCAST_GRP = "224.0.0.1"
-        MCAST_PORT = 10003
-        MESSAGE = "DISCOVER_SERVER"
-        BUFFER_SIZE = 1024
+    #     :param timeout: Maximum time (in seconds) to wait for responses.
+    #     :return: List of IPs of the discovered servers.
+    #     """
+    #     MCAST_GRP = "224.0.0.1"
+    #     MCAST_PORT = 10003
+    #     MESSAGE = "DISCOVER_SERVER"
+    #     BUFFER_SIZE = 1024
 
-        # Crear socket UDP para enviar y recibir
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        sock.settimeout(timeout)
+    #     # Crear socket UDP para enviar y recibir
+    #     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    #     sock.settimeout(timeout)
 
-        # Configurar TTL del paquete multicast
-        ttl = struct.pack("b", 1)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+    #     # Configurar TTL del paquete multicast
+    #     ttl = struct.pack("b", 1)
+    #     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
 
-        # Enviar la petición multicast
-        try:
-            sock.sendto(MESSAGE.encode(), (MCAST_GRP, MCAST_PORT))
-        except Exception as e:
-            print(f"Error enviando el mensaje multicast: {e}")
-            return []
+    #     # Enviar la petición multicast
+    #     try:
+    #         sock.sendto(MESSAGE.encode(), (MCAST_GRP, MCAST_PORT))
+    #     except Exception as e:
+    #         print(f"Error enviando el mensaje multicast: {e}")
+    #         return []
 
-        servers = []
-        start_time = time.time()
-        while True:
-            try:
-                data, addr = sock.recvfrom(BUFFER_SIZE)
-                server_ip = data.decode().strip()
-                servers.append(server_ip)
-                print(f"Servidor descubierto: {server_ip}")
-            except socket.timeout:
-                break
-            except Exception as e:
-                print(f"Error recibiendo datos: {e}")
-                break
-            if time.time() - start_time > timeout:
-                break
+    #     servers = []
+    #     start_time = time.time()
+    #     while True:
+    #         try:
+    #             data, addr = sock.recvfrom(BUFFER_SIZE)
+    #             server_ip = data.decode().strip()
+    #             servers.append(server_ip)
+    #             print(f"Servidor descubierto: {server_ip}")
+    #         except socket.timeout:
+    #             break
+    #         except Exception as e:
+    #             print(f"Error recibiendo datos: {e}")
+    #             break
+    #         if time.time() - start_time > timeout:
+    #             break
 
-        sock.close()
+    #     sock.close()
 
-        print(f"Servers descubiertos con multicast: {servers}")
+    #     print(f"Servers descubiertos con multicast: {servers}")
 
-        return [("main", server) for server in servers]
+    #     return [("main", server) for server in servers]
 
 
 
